@@ -1,4 +1,3 @@
-from encryption import BLOCK_SIZE, generate_keys
 from utility import xor
 
 
@@ -65,7 +64,7 @@ def CBC(data: list, key: list, iv: bytearray, dbg) -> bytearray:
     plain_blocks.append(xor(c0, iv))
     for i in range(1, len(data)):
         if dbg:
-            print("Block {0}: {1}".format(i, data[i]))
+            print("Block {0}: {1}".format(i, data[i].hex()))
         x = AES(data[i], key, dbg)
         plain_blocks.append(xor(x, data[i - 1]))
     for block in plain_blocks:

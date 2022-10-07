@@ -85,4 +85,3 @@ def CBC(data: list, key: list, iv: bytearray, dbg: bool) -> bytearray:
         for byte in block:
             cipher_text.append(byte)
     return cipher_text
-
