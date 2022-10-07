@@ -89,7 +89,7 @@ def CBC(data: list, key: list, iv: bytearray, dbg: bool) -> bytearray:
 
 def encrypt(data: bytearray, key: bytearray, mode: str, dbg=False, iv=None) -> bytearray:
     if len(key) != BLOCK_SIZE:
-        raise Exception('Incorrect size of key')
+        raise Exception('Incorrect size of key!')
     data_chunks = [data[i: i + BLOCK_SIZE] for i in range(0, len(data), BLOCK_SIZE)]
     if len(data_chunks[-1]) != BLOCK_SIZE:
         for i in range(len(data_chunks[-1]), BLOCK_SIZE):
@@ -102,6 +102,9 @@ def encrypt(data: bytearray, key: bytearray, mode: str, dbg=False, iv=None) -> b
     if mode == 'ecb':
         return ECB(data_chunks, k, dbg)
     elif mode == 'cbc' and iv is not None:
-        return CBC(data_chunks, k, iv, dbg)
+        iv_b = bytearray.fromhex(iv)
+        if len(iv_b) != BLOCK_SIZE:
+            raise Exception("Incorrect size of IV!")
+        return CBC(data_chunks, k, iv_b, dbg)
     else:
         raise Exception("Incorrect mode of encryption!")

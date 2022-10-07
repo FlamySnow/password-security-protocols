@@ -1,6 +1,7 @@
 import argparse
 import os.path
 from encryption import encrypt
+from decryption import decrypt
 
 
 def main():
@@ -24,17 +25,25 @@ def main():
         dec = args.dec
         key = bytearray.fromhex(args.key)
         mode = args.mode
-        iv = bytearray.fromhex(args.iv)
+        iv = args.iv
         if mode == 'cbc' and iv is None:
             raise Exception("Initialization vector is needed in CBC mode. Try option -i or --iv.")
         dbg = args.debug
         data = bytearray.fromhex(open(args.input_file, 'r').read())
+        if dec and enc:
+            raise Exception("You should use one flag of these: -d/--dec or -e/--enc!")
         if enc:
             cipher_text = encrypt(data, key, mode, dbg, iv).hex()
             output = open(args.output_file, 'w')
             output.write(cipher_text)
             output.close()
             print("Cipher text: ", cipher_text)
+        elif dec:
+            plain_text = decrypt(data, key, mode, dbg, iv).hex()
+            output = open(args.output_file, 'w')
+            output.write(plain_text)
+            output.close()
+            print("Plain text: ", plain_text)
     except Exception as msg:
         print(msg)
 
