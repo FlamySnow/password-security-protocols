@@ -56,20 +56,19 @@ def ECB(data: list, key: list, dbg) -> bytearray:
     return plain_text
 
 
-def CBC(data: list, key: list, dbg) -> bytearray:
+def CBC(data: list, key: list, iv: bytearray, dbg) -> bytearray:
     plain_text = bytearray()
     plain_blocks = []
-
-
-
-def decrypt(data: bytearray, key: bytearray, mode: str, dbg=False, iv=None) -> bytearray:
-    if len(key) != BLOCK_SIZE:
-        raise Exception("Incorrect size of key!")
-    data_chunks = [data[i: i + BLOCK_SIZE] for i in range(0, len(data), BLOCK_SIZE)]
-    k = generate_keys(key)
     if dbg:
-        print("K0: ", k[0].hex())
-        print("K1: ", k[1].hex())
-        print("K2: ", k[2].hex())
-    if mode == 'ecb':
-        return ECB(data_chunks, k, dbg)
+        print("Block 0: ", data[0])
+    c0 = AES(data[0], key, dbg)
+    plain_blocks.append(xor(c0, iv))
+    for i in range(1, len(data)):
+        if dbg:
+            print("Block {0}: {1}".format(i, data[i]))
+        x = AES(data[i], key, dbg)
+        plain_blocks.append(xor(x, data[i - 1]))
+    for block in plain_blocks:
+        for byte in block:
+            plain_text.append(byte)
+    return plain_text
