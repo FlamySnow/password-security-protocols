@@ -14,6 +14,9 @@ def main():
     if v:
         print("Valid file!")
     with open(pathfile, 'rb') as file:
+        file.read(3)  # Pass ENC
+        hash_byte = file.read(1)
+        cipher_byte = file.read(1)
 
     if v:
         print(f'Hash function: {hash_func}\nCipher algorythm: {cipher}\n')

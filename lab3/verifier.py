@@ -1,4 +1,6 @@
 import argparse
+from gen import NONCE_SIZE, AES_IV_SIZE, TDES_IV_SIZE
+from Crypto.Cipher import AES, DES3
 
 
 def verify(pathfile: str) -> bool:
@@ -16,6 +18,17 @@ def verify(pathfile: str) -> bool:
         cipher_byte = file.read(1)
         if cipher_byte != b'\x00' and cipher_byte != b'\x01' and cipher_byte != b'\x02' and cipher_byte != b'\x03':
             return False
+        file.read(NONCE_SIZE)
+        if cipher_byte == b'\x00':
+            file.read(TDES_IV_SIZE)
+            cipher_text = file.read()
+            if len(cipher_text) % DES3.block_size != 0:
+                return False
+        else:
+            file.read(AES_IV_SIZE)
+            cipher_text = file.read()
+            if len(cipher_text) % AES.block_size != 0:
+                return False
     return True
 
 
