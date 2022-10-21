@@ -1,11 +1,11 @@
 import argparse
-from gen import KEY_SIZE, NONCE_SIZE, TDES_IV_SIZE, AES_IV_SIZE
+from gen import KEY_SIZE
 
 hash_funcs = ['md5', 'sha1']
 ciphers = ['3des', 'aes128', 'aes192', 'aes256']
 
 
-def main():
+def verify() -> bool:
     parser = argparse.ArgumentParser(description="Verification for files encrypted by study cipher")
     parser.add_argument("file", help="File with extension '.enc'")
     args = parser.parse_args()
@@ -59,7 +59,7 @@ def main():
 
 if __name__ == '__main__':
     try:
-        print(main())
+        print(verify())
     except Exception as msg:
         print(msg)
         print(False)
