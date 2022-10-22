@@ -60,8 +60,13 @@ def main():
         print(f'NONCE: {nonce.hex()}')
         print(f'IV: {iv.hex()}')
         print(f'CT: {cipher_text.hex()}')
-
-    parole = bytes.fromhex(pathfile.split('_')[-1][:-4])
+    parole = b''
+    try:
+        parole = bytes.fromhex(pathfile.split('_')[-1][:-4])
+    except Exception as e:
+        print(f'Cannot get parole from filename: {e}')
+    if len(parole) != KEY_SIZE:
+        raise Exception("Got parole of incorrect length from filename!")
     print("Cracking...")
     with mp.Pool(mp.cpu_count() - 1) as p:
         step = 2 ** 32 // (mp.cpu_count() * 4)
