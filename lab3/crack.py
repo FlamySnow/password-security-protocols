@@ -1,8 +1,23 @@
 import argparse
 from verifier import verify
-from gen import NONCE_SIZE, TDES_IV_SIZE, AES_IV_SIZE, KEY_SIZE
+from gen import NONCE_SIZE, TDES_IV_SIZE, AES_IV_SIZE, KEY_SIZE, generate_key, PADDING
+from Crypto.Cipher import DES3, AES
+from Crypto.Util.Padding import unpad
 import multiprocessing as mp
 import time
+
+
+def decrypt(ct: bytes, parole: bytes, hash_fun: str, cipher: str, nonce: bytes, iv: bytes):
+    key = generate_key(parole, nonce, hash_fun, cipher)
+    if cipher == '3des':
+        in_key = DES3.adjust_key_parity(key)
+        tdes = DES3.new(in_key, DES3.MODE_CBC, iv=iv)
+        pt = unpad(tdes.decrypt(ct), DES3.block_size)
+        return pt[len(PADDING):]
+    else:
+        aes = AES.new(key, AES.MODE_CBC, iv)
+        pt = unpad(aes.decrypt(ct), AES.block_size)
+        return pt[len(PADDING):]
 
 
 def print_speed(start, end, t1, t2):
@@ -89,6 +104,8 @@ def main():
             for key in cand:
                 if key is not None:
                     print(f'Found: {key.hex()}, average speed = {speed} c/s')
+                    pt = decrypt(cipher_text, key, hash_func, cipher, nonce, iv)
+                    print(f'Plain text: {pt.decode()}')
 
 
 if __name__ == '__main__':
