@@ -5,20 +5,27 @@ import multiprocessing as mp
 import time
 
 
-def generate_candidates(a: tuple):
+def print_speed(start, end, t1, t2):
+    speed = (end - start) / (t2 - t1)
+    print(f'Current: {hex(start)}-{hex(end)}, speed = {speed} c/s')
+
+
+def generate_candidates(start: int, end: int, parole: bytes, v: bool, event):
+    if event.is_set():
+        return
     start_t = time.time()
-    for i in range(a[0], a[1]):
-        candidate = i.to_bytes(KEY_SIZE, 'big')
-        if candidate == a[2]:
-            if a[3]:
-                wasted_time = time.time() - start_t
-                speed = (i - a[0]) / wasted_time
-                print(f'Current: {hex(a[0])}-{hex(a[1])}, speed = {speed} c/s')
-            return candidate
-    if a[3]:
-        wasted_time = time.time() - start_t
-        speed = (a[1] - a[0]) / wasted_time
-        print(f'Current: {hex(a[0])}-{hex(a[1])}, speed = {speed} c/s')
+    while not event.is_set():
+        for i in range(start, end):
+            candidate = i.to_bytes(KEY_SIZE, 'big')
+            if candidate == parole:
+                event.set()
+                if v:
+                    end_t = time.time()
+                    print_speed(start, i, start_t, end_t)
+                return candidate
+    if v:
+        end_t = time.time()
+        print_speed(start, end, start_t, end_t)
 
 
 def main():
@@ -68,16 +75,20 @@ def main():
     if len(parole) != KEY_SIZE:
         raise Exception("Got parole of incorrect length from filename!")
     print("Cracking...")
-    with mp.Pool(mp.cpu_count() - 1) as p:
-        step = 2 ** 32 // (mp.cpu_count() * 4)
-        ranges = [(a, b, parole, v) for a, b in zip(range(0, 2**32 - step, step), range(step, 2 ** 32, step))]
-        start = time.time()
-        res = p.map(generate_candidates, ranges)
-        t = time.time() - start
-        speed = 2**32 / t
-        for key in res:
-            if key is not None:
-                print(f'Found: {key.hex()}, average speed = {speed} c/s')
+    with mp.Manager() as manager:
+        event = manager.Event()
+        with mp.Pool(mp.cpu_count() - 1) as p:
+            step = 2 ** 32 // (mp.cpu_count() * 8)
+            ranges = [(a, b, parole, v, event) for a, b in
+                      zip(range(0, 2 ** 32 - step, step), range(step, 2 ** 32, step))]
+            start = time.time()
+            res = p.starmap_async(generate_candidates, ranges)
+            cand = res.get()
+            t = time.time() - start
+            speed = 2 ** 32 / t
+            for key in cand:
+                if key is not None:
+                    print(f'Found: {key.hex()}, average speed = {speed} c/s')
 
 
 if __name__ == '__main__':
