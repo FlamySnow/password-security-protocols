@@ -7,8 +7,8 @@ import multiprocessing as mp
 import time
 
 
-def decrypt(ct: bytes, parole: bytes, hash_fun: str, cipher: str, nonce: bytes, iv: bytes):
-    key = generate_key(parole, nonce, hash_fun, cipher)
+def decrypt(ct: bytes, password: bytes, hash_fun: str, cipher: str, nonce: bytes, iv: bytes):
+    key = generate_key(password, nonce, hash_fun, cipher)
     if cipher == '3des':
         in_key = DES3.adjust_key_parity(key)
         tdes = DES3.new(in_key, DES3.MODE_CBC, iv=iv)
@@ -25,14 +25,14 @@ def print_speed(start, end, t1, t2):
     print(f'Current: {hex(start)}-{hex(end)}, speed = {speed} c/s')
 
 
-def generate_candidates(start: int, end: int, parole: bytes, v: bool, event):
+def generate_candidates(start: int, end: int, password: bytes, v: bool, event):
     if event.is_set():
         return
     start_t = time.time()
     while not event.is_set():
         for i in range(start, end):
             candidate = i.to_bytes(KEY_SIZE, 'big')
-            if candidate == parole:
+            if candidate == password:
                 event.set()
                 if v:
                     end_t = time.time()

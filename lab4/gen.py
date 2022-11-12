@@ -27,10 +27,11 @@ SAi = b'\x00\x00\x00\x01\x00\x00\x00\x30\x01\x01\x00\x01\x00\x00\x00\x28' \
 IDi = b'\x01\x11\x00\x00\xc0\xa8\x0c\x02'
 
 
-def generate(parole: bytes, hash_):
-    SKEYID = HMAC.new(parole, b''.join([Ni, Nr]), hash_).digest()
-    HASH = HMAC.new(SKEYID, b''.join([g_x, g_y, Ci, Cr, SAi, IDi])).digest()
-    return HASH
+def generate(password: bytes, hash_, nonce_i=Ni, nonce_r=Nr, key_ex_x=g_x, key_ex_y=g_y, cookie_i=Ci, cookie_r=Cr,
+             sa_i=SAi, id_r=IDi):
+    skeyid = HMAC.new(password, b''.join([nonce_i, nonce_r]), hash_).digest()
+    hash_r = HMAC.new(skeyid, b''.join([key_ex_x, key_ex_y, cookie_i, cookie_r, sa_i, id_r])).digest()
+    return hash_r
 
 
 def main():
