@@ -1,11 +1,12 @@
 import argparse
-from gen import generate
-import itertools
+from gen import generate, SHA1, MD5
 
 num = '0123456789'
 small = 'abcdefghijklmnopqrstuvwxyz'
 big = small.upper()
 a = ''.join([num, small, big])
+SHA1_SIZE = 20
+MD5_SIZE = 16
 
 
 def main():
@@ -15,58 +16,48 @@ def main():
     args = parser.parse_args()
     mask = list(args.m)
     filename = args.input_file
-    data = open(filename, 'r').read().split('*')
-    Ni = data[0]
-    Nr = data[1]
-    g_x = data[2]
-    g_y = data[3]
-    Ci = data[4]
-    Cr = data[5]
-    SAi = data[6]
-    IDr = data[7]
-    HASH = data[8]
-    candidate = []
-    for i in range(0, len(mask)):
-        match mask[i]:
+    str_data = open(filename, 'r').read().split('*')
+    # Ni = data[0]
+    # Nr = data[1]
+    # g_x = data[2]
+    # g_y = data[3]
+    # Ci = data[4]
+    # Cr = data[5]
+    # SAi = data[6]
+    # IDr = data[7]
+    # HASH = data[8]
+    data = [bytes.fromhex(x) for x in str_data]
+    if len(data[8]) == SHA1_SIZE:
+        hash_function = SHA1
+    elif len(data[8]) == MD5_SIZE:
+        hash_function = MD5
+    else:
+        raise Exception("Invalid size of cache!")
+    temp = []
+    for m in mask:
+        match m:
             case 'a':
-                if i == 0:
-                    candidate = [''.join(x) for x in itertools.product(a, repeat=1)]
-                else:
-                    new_candidates = []
-                    for c in candidate:
-                        for y in [''.join([c, ''.join(x)]) for x in itertools.product(a, repeat=1)]:
-                            new_candidates.append(y)
-                    candidate = new_candidates
+                temp.append([list(a), 0])
             case 's':
-                if i == 0:
-                    candidate = [''.join(x) for x in itertools.product(small, repeat=1)]
-                else:
-                    new_candidates = []
-                    for c in candidate:
-                        for y in [''.join([c, ''.join(x)]) for x in itertools.product(small, repeat=1)]:
-                            new_candidates.append(y)
-                    candidate = new_candidates
+                temp.append([list(small), 0])
             case 'l':
-                if i == 0:
-                    candidate = [''.join(x) for x in itertools.product(big, repeat=1)]
-                else:
-                    new_candidates = []
-                    for c in candidate:
-                        for y in [''.join([c, ''.join(x)]) for x in itertools.product(big, repeat=1)]:
-                            new_candidates.append(y)
-                    candidate = new_candidates
+                temp.append([list(big), 0])
             case 'd':
-                if i == 0:
-                    candidate = [''.join(x) for x in itertools.product(num, repeat=1)]
-                else:
-                    new_candidates = []
-                    for c in candidate:
-                        for y in [''.join([c, ''.join(x)]) for x in itertools.product(num, repeat=1)]:
-                            new_candidates.append(y)
-                    candidate = new_candidates
-    m = small, big, big
-    for x in itertools.product(small, big, big, a, a, a):
-        print(''.join(x))
+                temp.append([list(num), 0])
+            case _:
+                raise Exception("Invalid symbols for mask!")
+    while temp[len(temp) - 1][1] < len(temp[len(temp) - 1][0]):
+        candidate = [x[0][x[1]] for x in temp]
+        password = ''.join(candidate).encode()
+        if data[8] == generate(password, hash_function, data):
+            print(f'Found: {password.decode()}')
+            break
+        for m in temp:
+            if m[1] < len(m[0]) - 1:
+                m[1] += 1
+                break
+            else:
+                m[1] = 0
 
 
 if __name__ == '__main__':

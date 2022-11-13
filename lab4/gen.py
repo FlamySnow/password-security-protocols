@@ -27,11 +27,11 @@ SAi = b'\x00\x00\x00\x01\x00\x00\x00\x30\x01\x01\x00\x01\x00\x00\x00\x28' \
 IDi = b'\x01\x11\x00\x00\xc0\xa8\x0c\x02'
 
 
-def generate(password: bytes, hash_, nonce_i=Ni, nonce_r=Nr, key_ex_x=g_x, key_ex_y=g_y, cookie_i=Ci, cookie_r=Cr,
-             sa_i=SAi, id_r=IDi):
-    skeyid = HMAC.new(password, b''.join([nonce_i, nonce_r]), hash_).digest()
-    hash_r = HMAC.new(skeyid, b''.join([key_ex_x, key_ex_y, cookie_i, cookie_r, sa_i, id_r])).digest()
-    return hash_r
+def generate(password: bytes, hash_function, data):
+    """ data: 0 - Ni, 1 - Nr, 2 - g_x, 3 - g_y, 4 - Ci, 5 - Cr, 6 - SAi, 7 - id """
+    skeyid = HMAC.new(password, b''.join([data[0], data[1]]), hash_function).digest()
+    hash_i = HMAC.new(skeyid, b''.join([data[2], data[3], data[4], data[5], data[6], data[7]]), hash_function).digest()
+    return hash_i
 
 
 def main():
@@ -39,16 +39,17 @@ def main():
     parser.add_argument('-m', choices=["sha1", "md5"], required=True, help="Hash function for generation")
     parser.add_argument('-p', required=True, help="Parole for generation, string in UTF-8")
     args = parser.parse_args()
-    hash_function = args.m
-    parole = args.p
-    if hash_function == 'sha1':
-        hash_ = SHA1
+    hash_name = args.m
+    data = [Ni, Nr, g_x, g_y, Ci, Cr, SAi, IDi]
+    password = args.p.encode()
+    if hash_name == 'sha1':
+        hash_function = SHA1
     else:
-        hash_ = MD5
-    HASH = generate(parole.encode(), hash_)
-    with open(f"{parole}_{hash_function}.txt", 'w') as f:
+        hash_function = MD5
+    hash_i = generate(password, hash_function, data)
+    with open(f"{password.decode()}_{hash_name}.txt", 'w') as f:
         f.write(f'{Ni.hex()}*{Nr.hex()}*{g_x.hex()}*{g_y.hex()}*{Ci.hex()}*{Cr.hex()}*{SAi.hex()}*{IDi.hex()}'
-                f'*{HASH.hex()}')
+                f'*{hash_i.hex()}')
 
 
 if __name__ == '__main__':
