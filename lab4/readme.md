@@ -18,6 +18,7 @@
 ### Примеры запуска:
 
 `python gen.py -m sha1 -p 1aer23gd`
+
 `python gen.py -m md5 -p ds09fs0w9`
 
 ## 2. Подбор пароля для протокола IKEv1
@@ -37,5 +38,7 @@
 ### Примеры запуска:
 
 `python crack.py -m aassldld test.txt`
+
 `python crack.py -m lllll test.txt`
+
 `python crack.py -m lllasd test.txt`
