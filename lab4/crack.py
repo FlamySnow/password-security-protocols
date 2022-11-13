@@ -51,13 +51,14 @@ def main():
         password = ''.join(candidate).encode()
         if data[8] == generate(password, hash_function, data):
             print(f'Found: {password.decode()}')
-            break
+            return
         for m in temp:
             if m[1] < len(m[0]) - 1:
                 m[1] += 1
                 break
             else:
                 m[1] = 0
+    print("Not found")
 
 
 if __name__ == '__main__':

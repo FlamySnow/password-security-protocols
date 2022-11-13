@@ -37,7 +37,7 @@ def generate(password: bytes, hash_function, data):
 def main():
     parser = argparse.ArgumentParser(description="Generator of hashes for protocol IKEv1 Aggressive mode")
     parser.add_argument('-m', choices=["sha1", "md5"], required=True, help="Hash function for generation")
-    parser.add_argument('-p', required=True, help="Parole for generation, string in UTF-8")
+    parser.add_argument('-p', required=True, help="Password for generation, string in UTF-8")
     args = parser.parse_args()
     hash_name = args.m
     data = [Ni, Nr, g_x, g_y, Ci, Cr, SAi, IDi]
