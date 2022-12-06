@@ -30,8 +30,8 @@ IDi = b'\x01\x11\x00\x00\xc0\xa8\x0c\x02'
 def generate(password: bytes, hash_function, data):
     """ data: 0 - Ni, 1 - Nr, 2 - g_x, 3 - g_y, 4 - Ci, 5 - Cr, 6 - SAi, 7 - id """
     skeyid = HMAC.new(password, b''.join([data[0], data[1]]), hash_function).digest()
-    hash_i = HMAC.new(skeyid, b''.join([data[2], data[3], data[4], data[5], data[6], data[7]]), hash_function).digest()
-    return hash_i
+    hash_r = HMAC.new(skeyid, b''.join([data[3], data[2], data[5], data[4], data[6], data[7]]), hash_function).digest()
+    return hash_r
 
 
 def main():
