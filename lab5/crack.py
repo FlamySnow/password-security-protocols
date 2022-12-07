@@ -31,17 +31,18 @@ def decrypt(data: bytes, psw: bytes, hf: str, cph: str, ni: bytes, nr: bytes, gx
 def check(pt: bytes, hf: str, key: bytes, gx: bytes, gy: bytes, ci: bytes, cr: bytes, sa: bytes) -> bool:
     if pt[:2] != b'\x08\x00':
         return False
-    return True
-    # h = pt[10:]
-    # id_b = pt[2:10]
-    # if hf == 'md5':
-    #     hash_func = MD5
-    # else:
-    #     hash_func = SHA1
-    # expected = HMAC.new(key, b''.join([gx, gy, ci, cr, sa, id_b]), hash_func).digest()
-    # if expected == h:
-    #     return True
-    # return False
+    if hf == 'md5':
+        hash_func = MD5
+        hash_size = 16
+    else:
+        hash_func = SHA1
+        hash_size = 20
+    id_b = pt[2:len(pt) - hash_size]
+    h = pt[len(pt) - hash_size:]
+    expected = HMAC.new(key, b''.join([gx, gy, ci, cr, sa, id_b]), hash_func).digest()
+    if expected == h:
+        return True
+    return False
 
 
 def process(data: bytes, word: str, candidates: list, hf: str, cph: str, ni: bytes, nr: bytes, gx: bytes, gy: bytes,
