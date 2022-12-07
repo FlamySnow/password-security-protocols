@@ -49,11 +49,9 @@ def process(data: bytes, word: str, candidates: list, hf: str, cph: str, ni: byt
             ci: bytes, cr: bytes, gxy: bytes, sa: bytes, event):
     if event.is_set():
         return
-    print(word)
     while candidates[-1][1] < len(candidates[-1][0]):
         candidate = [x[0][x[1]] for x in candidates]
         password = (word + ''.join(candidate)).encode()
-        print(password.decode())
         pt, key = decrypt(data, password, hf, cph, ni, nr, gx, gy, ci, cr, gxy)
         for i in range(len(candidates)):
             if candidates[i][1] < len(candidates[i][0]) - 1:

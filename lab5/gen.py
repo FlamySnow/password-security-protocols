@@ -93,9 +93,6 @@ def encrypt(psw: bytes, hf: str, cph: str, ni=NONCE_I, nr=NONCE_R, gx=G_X, gy=G_
     hash_i = HMAC.new(skeyid, b''.join([gx, gy, ci, cr, sa, idi_b]), hash_function).digest()
     pt = b''.join([b'\x08\x00', idi_b, hash_i])
     iv = generate_iv(hf, cph, gx, gy)
-    print(f"SKEYID: {skeyid.hex()}")
-    print(f"SKEYID_E: {skeyid_e.hex()}")
-    print(f"IV: {iv.hex()}")
     return cipher.new(skeyid_e, cipher.MODE_CBC, iv).encrypt(pad(pt, cipher.block_size))
 
 
