@@ -22,8 +22,6 @@ G_XY = bytes.fromhex("5795c69c8fe8802204fcd52077f899be0fa439579e39b773084508c25a
 SAI = bytes.fromhex("00000001000000010000002c000100010000002400010000800b0001800c0e1080010007800e0080800200028003000180"
                     "040002")
 
-# ID = b'\x08\x00\x00\x0c\x01\x11\x00\x00\xc0\xa8\x0c\x02'
-
 ID_B = b'\x01\x11\x00\x00\xc0\xa8\x0c\x02'
 
 
@@ -65,6 +63,21 @@ def generate_keys(psw: bytes, hf: str, ni: bytes, nr: bytes, gxy: bytes, ci: byt
     return skeyid, skeyid_e
 
 
+def generate_iv(hf: str, cph: str, gx: bytes, gy: bytes) -> bytes:
+    if hf == 'md5':
+        hash_func = MD5
+    else:
+        hash_func = SHA1
+    if cph == '3des':
+        size = 8
+    else:
+        size = 16
+    iv = hash_func.new(b''.join([gx, gy])).digest()
+    if len(iv) > size:
+        iv = iv[:size]
+    return iv
+
+
 def encrypt(psw: bytes, hf: str, cph: str, ni=NONCE_I, nr=NONCE_R, gx=G_X, gy=G_Y, ci=COOKIE_I, cr=COOKIE_R, sa=SAI,
             idi_b=ID_B, gxy=G_XY) -> bytes:
     if hf == 'md5':
@@ -73,18 +86,16 @@ def encrypt(psw: bytes, hf: str, cph: str, ni=NONCE_I, nr=NONCE_R, gx=G_X, gy=G_
         hash_function = SHA1
     if cph == '3des':
         cipher = DES3
-        iv_size = 8
     else:
         cipher = AES
-        iv_size = 16
     skeyid, skeyid_e = generate_keys(psw, hf, ni, nr, gxy, ci, cr)
     skeyid_e = adjust_key_size(skeyid_e, cph, hf)
-    print(len(skeyid_e))
     hash_i = HMAC.new(skeyid, b''.join([gx, gy, ci, cr, sa, idi_b]), hash_function).digest()
-    pt = b''.join([b'\x08\x00', idi_b, b'\x00\x00', hash_i])
-    iv = hash_function.new(b''.join([gx, gy])).digest()
-    if len(iv) > iv_size:
-        iv = iv[:iv_size]
+    pt = b''.join([b'\x08\x00', idi_b, hash_i])
+    iv = generate_iv(hf, cph, gx, gy)
+    print(f"SKEYID: {skeyid.hex()}")
+    print(f"SKEYID_E: {skeyid_e.hex()}")
+    print(f"IV: {iv.hex()}")
     return cipher.new(skeyid_e, cipher.MODE_CBC, iv).encrypt(pad(pt, cipher.block_size))
 
 
