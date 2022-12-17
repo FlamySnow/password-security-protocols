@@ -2,7 +2,7 @@ import argparse
 from gen import generate, SHA1, MD5
 
 num = '0123456789'
-small = 'abcdefghijklmnopqrstuvwxyz'
+small = 'abcdefghijklmnopqrstuvwxyz!'
 big = small.upper()
 a = ''.join([num, small, big])
 SHA1_SIZE = 20
@@ -58,6 +58,7 @@ def main():
                 break
             else:
                 m[1] = 0
+                print(password.decode())
     print("Not found")
 
 

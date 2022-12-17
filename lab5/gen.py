@@ -27,12 +27,12 @@ ID_B = b'\x01\x11\x00\x00\xc0\xa8\x0c\x02'
 
 def adjust_key_size(key: bytes, cph: str, hf: str) -> bytes:
     match cph:
-        case 'aes128':
-            key_size = 16
+        case 'aes192':
+            key_size = 24
         case 'aes256':
             key_size = 32
         case _:
-            key_size = 24
+            key_size = 16
     if len(key) == key_size:
         return key
     if hf == 'md5':
@@ -48,6 +48,15 @@ def adjust_key_size(key: bytes, cph: str, hf: str) -> bytes:
         key = ka
     if len(key) > key_size:
         key = key[:key_size]
+
+    # if len(key) < key_size:
+    #     k_1 = HMAC.new(key, b'\x00', h).digest()
+    #     k_2 = HMAC.new(key, k_1, h).digest()
+    #     k = k_1 + k_2
+    #     return k[: key_size]
+    # elif len(key) > key_size:
+    #     return key[:key_size]
+
     return key
 
 
@@ -57,9 +66,9 @@ def generate_keys(psw: bytes, hf: str, ni: bytes, nr: bytes, gxy: bytes, ci: byt
     else:
         hash_function = SHA1
     skeyid = HMAC.new(psw, b''.join([ni, nr]), hash_function).digest()
-    skeyid_d = HMAC.new(psw, b''.join([gxy, ci, cr, b'\x00']), hash_function).digest()
-    skeyid_a = HMAC.new(psw, b''.join([skeyid_d, gxy, ci, cr, b'\x01']), hash_function).digest()
-    skeyid_e = HMAC.new(psw, b''.join([skeyid_a, gxy, ci, cr, b'\x02']), hash_function).digest()
+    skeyid_d = HMAC.new(skeyid, b''.join([gxy, ci, cr, b'\x00']), hash_function).digest()
+    skeyid_a = HMAC.new(skeyid, b''.join([skeyid_d, gxy, ci, cr, b'\x01']), hash_function).digest()
+    skeyid_e = HMAC.new(skeyid, b''.join([skeyid_a, gxy, ci, cr, b'\x02']), hash_function).digest()
     return skeyid, skeyid_e
 
 
@@ -91,9 +100,12 @@ def encrypt(psw: bytes, hf: str, cph: str, ni=NONCE_I, nr=NONCE_R, gx=G_X, gy=G_
     skeyid, skeyid_e = generate_keys(psw, hf, ni, nr, gxy, ci, cr)
     skeyid_e = adjust_key_size(skeyid_e, cph, hf)
     hash_i = HMAC.new(skeyid, b''.join([gx, gy, ci, cr, sa, idi_b]), hash_function).digest()
-    pt = b''.join([b'\x08\x00', idi_b, hash_i])
+    pt = b''.join([b'\x08\x00\x00\x0c', idi_b, b'\x00\x00', (len(hash_i) + 4).to_bytes(2, "big"), hash_i])
     iv = generate_iv(hf, cph, gx, gy)
-    return cipher.new(skeyid_e, cipher.MODE_CBC, iv).encrypt(pad(pt, cipher.block_size))
+    if len(pt) % cipher.block_size != 0:
+        pt = b''.join([pt, bytes.fromhex("".zfill(((len(pt) // cipher.block_size + 1) * cipher.block_size - len(pt))
+                                                  * 2))])
+    return cipher.new(skeyid_e, cipher.MODE_CBC, iv).encrypt(pt)
 
 
 def main():

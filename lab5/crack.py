@@ -21,15 +21,11 @@ def decrypt(data: bytes, psw: bytes, hf: str, cph: str, ni: bytes, nr: bytes, gx
     skeyid_e = adjust_key_size(skeyid_e, cph, hf)
     iv = generate_iv(hf, cph, gx, gy)
     pt = cipher.new(skeyid_e, cipher.MODE_CBC, iv).decrypt(data)
-    try:
-        pt = unpad(pt, cipher.block_size)
-        return pt, skeyid
-    except Exception:
-        return None, skeyid
+    return pt, skeyid
 
 
 def check(pt: bytes, hf: str, key: bytes, gx: bytes, gy: bytes, ci: bytes, cr: bytes, sa: bytes) -> bool:
-    if pt[:2] != b'\x08\x00':
+    if pt[:4] != b'\x08\x00\x00\x0c':
         return False
     if hf == 'md5':
         hash_func = MD5
@@ -37,10 +33,12 @@ def check(pt: bytes, hf: str, key: bytes, gx: bytes, gy: bytes, ci: bytes, cr: b
     else:
         hash_func = SHA1
         hash_size = 20
-    id_b = pt[2:len(pt) - hash_size]
-    h = pt[len(pt) - hash_size:]
+    id_b = pt[4: pt[3]]
+    h = pt[pt[3] + 4: pt[3] + hash_size + 4]
     expected = HMAC.new(key, b''.join([gx, gy, ci, cr, sa, id_b]), hash_func).digest()
     if expected == h:
+        print(f"ID: {id_b.hex()}")
+        print(f"HASH: {h.hex()}")
         return True
     return False
 
@@ -66,8 +64,8 @@ def process(data: bytes, word: str, candidates: list, hf: str, cph: str, ni: byt
             continue
         if check(pt, hf, key, gx, gy, ci, cr, sa):
             event.set()
-            print(pt)
-            return password, pt
+            print(f"Password: {password.decode()}")
+            return
     for m in candidates:
         m[1] = 0
 
@@ -120,14 +118,7 @@ def main():
             x = [(bytes.fromhex(data[10]), w, temp, hash_name, cipher, bytes.fromhex(data[2]),
                   bytes.fromhex(data[3]), bytes.fromhex(data[4]), bytes.fromhex(data[5]), bytes.fromhex(data[7]),
                   bytes.fromhex(data[8]), bytes.fromhex(data[6]), bytes.fromhex(data[9]), event) for w in words]
-            res = p.starmap_async(process, x)
-            cand = res.get()
-            for p in cand:
-                if p is not None:
-                    print(f"Password: {p[0].decode()}")
-                    print(f"PT: {p[1].hex()}")
-                    return
-        print("Key is not found")
+            res = p.starmap_async(process, x).get()
 
 
 if __name__ == '__main__':
