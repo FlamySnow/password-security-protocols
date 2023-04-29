@@ -1,7 +1,7 @@
 import argparse
 from Crypto.Hash import MD5, SHA1, HMAC
 from Crypto.Cipher import AES, DES3
-from Crypto.Util.Padding import pad
+from crack import generate_keys, adjust_key_size, generate_iv
 
 COOKIE_I = b'\xc1\xae\x2e\x73\x24\x61\xdd\xcc'
 COOKIE_R = b'\xf8\x2a\x8c\x31\x1e\x1a\x3e\xb7'
@@ -23,68 +23,6 @@ SAI = bytes.fromhex("00000001000000010000002c000100010000002400010000800b0001800
                     "040002")
 
 ID_B = b'\x01\x11\x00\x00\xc0\xa8\x0c\x02'
-
-
-def adjust_key_size(key: bytes, cph: str, hf: str) -> bytes:
-    match cph:
-        case 'aes192':
-            key_size = 24
-        case 'aes256':
-            key_size = 32
-        case _:
-            key_size = 16
-    if len(key) == key_size:
-        return key
-    if hf == 'md5':
-        h = MD5
-    else:
-        h = SHA1
-    if len(key) < key_size:
-        k0 = HMAC.new(key, b'\x00', h).digest()
-        ka = k0
-        while len(ka) < key_size:
-            k0 = HMAC.new(key, k0, h).digest()
-            ka = b''.join([ka, k0])
-        key = ka
-    if len(key) > key_size:
-        key = key[:key_size]
-
-    # if len(key) < key_size:
-    #     k_1 = HMAC.new(key, b'\x00', h).digest()
-    #     k_2 = HMAC.new(key, k_1, h).digest()
-    #     k = k_1 + k_2
-    #     return k[: key_size]
-    # elif len(key) > key_size:
-    #     return key[:key_size]
-
-    return key
-
-
-def generate_keys(psw: bytes, hf: str, ni: bytes, nr: bytes, gxy: bytes, ci: bytes, cr: bytes) -> (bytes, bytes):
-    if hf == 'md5':
-        hash_function = MD5
-    else:
-        hash_function = SHA1
-    skeyid = HMAC.new(psw, b''.join([ni, nr]), hash_function).digest()
-    skeyid_d = HMAC.new(skeyid, b''.join([gxy, ci, cr, b'\x00']), hash_function).digest()
-    skeyid_a = HMAC.new(skeyid, b''.join([skeyid_d, gxy, ci, cr, b'\x01']), hash_function).digest()
-    skeyid_e = HMAC.new(skeyid, b''.join([skeyid_a, gxy, ci, cr, b'\x02']), hash_function).digest()
-    return skeyid, skeyid_e
-
-
-def generate_iv(hf: str, cph: str, gx: bytes, gy: bytes) -> bytes:
-    if hf == 'md5':
-        hash_func = MD5
-    else:
-        hash_func = SHA1
-    if cph == '3des':
-        size = 8
-    else:
-        size = 16
-    iv = hash_func.new(b''.join([gx, gy])).digest()
-    if len(iv) > size:
-        iv = iv[:size]
-    return iv
 
 
 def encrypt(psw: bytes, hf: str, cph: str, ni=NONCE_I, nr=NONCE_R, gx=G_X, gy=G_Y, ci=COOKIE_I, cr=COOKIE_R, sa=SAI,
